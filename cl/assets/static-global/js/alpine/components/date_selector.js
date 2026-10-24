@@ -1,6 +1,7 @@
 document.addEventListener('alpine:init', () => {
   Alpine.data('dateSelector', () => ({
     ...createFocus(),
+    ...createUtils(),
     dropdownMenuOpen: true,
     dateAfterRelative: '',
     selectedType: 'calendar',
@@ -230,6 +231,14 @@ document.addEventListener('alpine:init', () => {
           positionElement: calendarBeforeEl,
         });
         this.flatpickrBeforeInputEl.setAttribute('type', 'hidden');
+
+        // The active layout's inputs are hidden when crossing the breakpoint.
+        // Close their calendars before Flatpickr repositions against those inputs.
+        this.onBreakpointChange(() => {
+          for (const instance of Object.values(this.calendar)) {
+            if (instance.isOpen) instance.close();
+          }
+        });
       });
     },
   }));
