@@ -5,6 +5,18 @@
 
 @layer base {
   :root {
+    --cl-grey-25: 253 252 251;
+    --cl-grey-50: 251 250 248;
+    --cl-grey-100: 245 243 239;
+    --cl-grey-200: 232 228 222;
+    --cl-grey-300: 214 208 198;
+    --cl-grey-400: 168 160 145;
+    --cl-grey-500: 119 111 97;
+    --cl-grey-600: 87 79 64;
+    --cl-grey-700: 69 63 53;
+    --cl-grey-800: 41 38 31;
+    --cl-grey-900: 28 24 20;
+    --cl-grey-950: 23 20 17;
     --mobile-breakpoint: theme(screens.md);
     --nav-menu-width: 222px;
     --profile-menu-width: 228px;
@@ -17,6 +29,75 @@
     --mobile-dialog-panel-height: calc(100vh - var(--mobile-dialog-header-height));
     --content-max-width: 1280px;
   }
+
+  /* One shared color scale keeps existing Tailwind-based v2 components readable
+     without introducing a Bootstrap-specific override stylesheet. */
+  html[data-color-mode="dark"] {
+    color-scheme: dark; /* frontend-checks-skip-line: check_raw_css */
+    --cl-grey-25: 17 20 24;
+    --cl-grey-50: 24 28 34;
+    --cl-grey-100: 31 38 46;
+    --cl-grey-200: 47 56 68;
+    --cl-grey-300: 65 77 91;
+    --cl-grey-400: 108 119 130;
+    --cl-grey-500: 144 154 164;
+    --cl-grey-600: 176 184 194;
+    --cl-grey-700: 205 213 221;
+    --cl-grey-800: 224 231 237;
+    --cl-grey-900: 241 245 249;
+    --cl-grey-950: 248 250 252;
+  }
+
+  html[data-color-mode="dark"] body {
+    @apply bg-greyscale-25 text-greyscale-900;
+  }
+
+  /* White backgrounds and native widgets do not use the greyscale scale. */
+  html[data-color-mode="dark"] .bg-white {
+    @apply bg-greyscale-50;
+  }
+  html[data-color-mode="dark"] :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+    @apply bg-greyscale-50 border-greyscale-300 text-greyscale-900;
+  }
+  html[data-color-mode="dark"] :is(input, textarea)::placeholder {
+    @apply text-greyscale-500;
+  }
+  html[data-color-mode="dark"] .text-black {
+    @apply text-greyscale-900;
+  }
+  html[data-color-mode="dark"] .border {
+    @apply border-greyscale-300;
+  }
+
+  /* A light-on-dark primary link color must remain separate from button fills,
+     which continue to use the branded red and white text. */
+  html[data-color-mode="dark"] :is(.text-primary-600, .text-primary-700, .text-primary-800, .links) {
+    @apply text-primary-300;
+  }
+  html[data-color-mode="dark"] .links:hover {
+    @apply text-primary-200;
+  }
+  html[data-color-mode="dark"] :is(.bg-primary-25, .bg-primary-50, .bg-primary-100) {
+    @apply bg-greyscale-100;
+  }
+  html[data-color-mode="dark"] :is(.btn-dark, .btn-dark:hover) {
+    @apply bg-greyscale-200 text-greyscale-900;
+  }
+  html[data-color-mode="dark"] .alert-warning {
+    @apply bg-greyscale-100 text-greyscale-900;
+  }
+  html[data-color-mode="dark"] .alert-danger {
+    @apply bg-greyscale-100 text-primary-300;
+  }
+
+  /* Extracted court text must not inherit the light document palette. */
+  html[data-color-mode="dark"] :is(#opinion-content, .subopinion-content, .subopinion-content .plaintext, .serif-text) {
+    @apply text-greyscale-900;
+  }
+  html[data-color-mode="dark"] :is(#opinion-content pre, .subopinion-content pre, .subopinion-content code) {
+    @apply bg-greyscale-100 text-greyscale-900;
+  }
+
   code {
     @apply font-sans text-sm bg-brand-100 text-brand-600 border border-brand-300 rounded-[2px] px-1;
   }
