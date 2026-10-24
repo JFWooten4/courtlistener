@@ -50,8 +50,8 @@ document.addEventListener('alpine:init', () => {
     get label() {
       return this.isDark ? 'Use light mode' : 'Use dark mode';
     },
-    get symbol() {
-      return this.isDark ? '☀' : '☾';
+    get isLight() {
+      return !this.isDark;
     },
     toggle() {
       Alpine.store('colorMode').toggle();
