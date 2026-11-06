@@ -219,7 +219,7 @@ $(document).ready(function () {
   ///////////////////
   // Docket page: Change sort order when the asc/desc buttons are clicked.
   ///////////////////
-  $("#sort-buttons :input").on("change", function () {
+  $("#sort-buttons :input, #id_filing_type").on("change", function () {
     this.closest("form").submit();
   });
 

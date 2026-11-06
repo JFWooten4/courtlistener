@@ -1789,6 +1789,70 @@ class ViewRecapDocketTest(TestCase):
         self.assertIn(self.de_1.description, r.content.decode())
         self.assertNotIn(self.de_2.description, r.content.decode())
 
+    async def test_filing_type_filters_main_documents_and_attachments(self) -> None:
+        """Exact court classifications match either document position,
+        without duplicating entries with multiple matching attachments.
+        """
+        await sync_to_async(RECAPDocumentFactory)(
+            docket_entry=self.de_1,
+            document_number="9001",
+            description="Judgment",
+            document_type=RECAPDocument.PACER_DOCUMENT,
+        )
+        await sync_to_async(RECAPDocumentFactory)(
+            docket_entry=self.de_1,
+            document_number="9002",
+            description="Judgment",
+            document_type=RECAPDocument.ATTACHMENT,
+            attachment_number=1,
+        )
+        await sync_to_async(RECAPDocumentFactory)(
+            docket_entry=self.de_2,
+            document_number="9003",
+            description="Notice of Appeal",
+        )
+        url = reverse("view_docket", args=[self.docket.pk, self.docket.slug])
+        response = await self.async_client.get(
+            url,
+            {
+                "filing_type": "Judgment",
+                "filed_after": "01/14/2025",
+                "filed_before": "01/16/2025",
+                "order_by": "desc",
+            },
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(
+            [entry.pk for entry in response.context["docket_entries"]],
+            [self.de_1.pk],
+        )
+        self.assertIn("Judgment", response.content.decode())
+        self.assertIn("Notice of Appeal", response.content.decode())
+
+    async def test_filing_type_no_matches_keeps_filter_available(self) -> None:
+        """A no-results page must retain its type selector for clearing."""
+        await sync_to_async(RECAPDocumentFactory)(
+            docket_entry=self.de_1,
+            document_number="9004",
+            description="Judgment",
+        )
+        url = reverse("view_docket", args=[self.docket.pk, self.docket.slug])
+        response = await self.async_client.get(
+            url,
+            {"filing_type": "Judgment", "filed_after": "01/20/2025"},
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(response.context["docket_entries"].paginator.count, 0)
+        self.assertIn('name="filing_type"', response.content.decode())
+        self.assertIn("No docket entries match your filters", response.content.decode())
+
+    async def test_invalid_filing_type_is_not_applied(self) -> None:
+        """Reject document classifications that this docket lacks."""
+        url = reverse("view_docket", args=[self.docket.pk, self.docket.slug])
+        response = await self.async_client.get(url, {"filing_type": "Unknown"})
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertContains(response, "There were errors applying your filters")
+
     async def test_recap_docket_invalid_entry_filed_filter(self) -> None:
         """Confirm that invalid date values in the docket entry filed filter
         produce a validation error for users.
@@ -2117,6 +2181,34 @@ class ScotusDocketFlagEnabledTest(TestCase):
         entries = list(r.context["docket_entries"])
         self.assertEqual([e.pk for e in entries], [entry2.pk])
         self.assertNotIn(entry1.pk, [e.pk for e in entries])
+
+    async def test_scotus_docket_filters_by_filing_type(self) -> None:
+        """SCOTUS uses its own document relation for the same filter."""
+        first = await sync_to_async(SCOTUSDocketEntryFactory)(
+            docket=self.docket, entry_number=1
+        )
+        second = await sync_to_async(SCOTUSDocketEntryFactory)(
+            docket=self.docket, entry_number=2
+        )
+        await sync_to_async(SCOTUSDocumentFactory)(
+            docket_entry=first,
+            description="Brief of Amicus Curiae",
+            document_number=1,
+        )
+        await sync_to_async(SCOTUSDocumentFactory)(
+            docket_entry=second,
+            description="Petition for certiorari",
+            document_number=2,
+        )
+        response = await self.async_client.get(
+            reverse("view_docket", args=[self.docket.pk, self.docket.slug]),
+            {"filing_type": "Brief of Amicus Curiae"},
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertEqual(
+            [entry.pk for entry in response.context["docket_entries"]],
+            [first.pk],
+        )
 
     async def test_scotus_docket_default_order_matches_sort_flag(
         self,
@@ -3897,6 +3989,8 @@ class DocketEntryFilterFormHasFiltersTest(SimpleTestCase):
             "entry_lte=10": True,
             "filed_after=01/01/2024": True,
             "filed_before=01/01/2024": True,
+            "filing_type=Judgment": True,
+            "filing_type=": False,
             # q is not a docket filter: the docket's search boxes submit to
             # the search page.
             "q=motion": False,
@@ -4933,6 +5027,7 @@ class DocketFilterPaginationWiringTest(TestCase):
             'name="filed_before"',
             'name="entry_gte"',
             'name="entry_lte"',
+            'name="filing_type"',
             'name="order_by"',
         ):
             with self.subTest(field=field):

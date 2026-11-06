@@ -9,6 +9,7 @@ from urllib.parse import urlencode
 import eyecite
 import waffle
 from asgiref.sync import async_to_sync, sync_to_async
+from django import forms
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
@@ -375,6 +376,29 @@ async def view_docket(
 
     source = docket.get_entry_source()
     de_list = await fetch_docket_entries(docket)
+    description_lookup = f"{source.document_relation}__description"
+
+    @sync_to_async
+    def get_filing_type_choices() -> list[tuple[str, str]]:
+        """Find the filing types represented in this docket's documents.
+
+        Choices use the courts' actual document descriptions, not the
+        main-document/attachment distinction. Query before filtering so
+        changing date/number filters does not remove selected options.
+        """
+        descriptions = (
+            de_list.order_by()
+            .filter(**{f"{description_lookup}__isnull": False})
+            .values_list(description_lookup, flat=True)
+            .order_by(description_lookup)
+            .distinct()
+        )
+        return [("", "All filing types")] + [
+            (label, label) for label in descriptions if label and label.strip()
+        ]
+
+    filing_type_field = cast(forms.ChoiceField, form.fields["filing_type"])
+    filing_type_field.choices = await get_filing_type_choices()
 
     if await sync_to_async(form.is_valid)():
         cd = form.cleaned_data
@@ -387,6 +411,11 @@ async def view_docket(
             de_list = de_list.filter(date_filed__gte=cd["filed_after"])
         if cd.get("filed_before"):
             de_list = de_list.filter(date_filed__lte=cd["filed_before"])
+        if cd.get("filing_type"):
+            # More than one attachment can have the same classification.
+            de_list = de_list.filter(
+                **{description_lookup: cd["filing_type"]}
+            ).distinct()
         if cd.get("order_by") == DocketEntryFilterForm.DESCENDING:
             sort_order_asc = False
 

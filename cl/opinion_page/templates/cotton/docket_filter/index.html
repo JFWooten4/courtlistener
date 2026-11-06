@@ -79,6 +79,16 @@
           </div>
         </div>
 
+        {# Filing type #}
+        <div>
+          <label for="filing-type-desktop" class="text-sm font-medium text-greyscale-700">Filing type</label>
+          <select name="filing_type" id="filing-type-desktop" class="input-text w-44" x-on:change="submitForm($event)">
+            {% for value, label in form.filing_type.field.choices %}
+              <option value="{{ value }}" {% if form.filing_type.value == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
         {# Sort order #}
         <fieldset class="flex items-end">
           <legend class="sr-only">Sort order</legend>
@@ -218,6 +228,16 @@
               class="input-text w-full mt-1"
               placeholder="To"
             />
+          </div>
+
+          {# Filing type #}
+          <div>
+            <label for="filing-type-mobile" class="text-sm font-medium text-greyscale-700">Filing type</label>
+            <select name="filing_type" id="filing-type-mobile" class="input-text w-full mt-1">
+              {% for value, label in form.filing_type.field.choices %}
+                <option value="{{ value }}" {% if form.filing_type.value == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
           </div>
 
           {# Sort order #}

@@ -202,6 +202,8 @@ class DocketEntrySource:
 
     entries_queryset: Callable[[Docket], QuerySet[SourceDocketEntry]]
     documents_for_entry: Callable[[Any], Iterable]
+    # Reverse relation used to filter entries by their documents' descriptions.
+    document_relation: str
     order_by_asc: tuple[str, ...]
     order_by_desc: tuple[str, ...]
     # Single-document lookup, for the document detail page.
@@ -355,6 +357,7 @@ async def _get_recap_document_for_render(pk: int) -> RECAPDocument:
 RECAP: DocketEntrySource = DocketEntrySource(
     entries_queryset=_recap_entries,
     documents_for_entry=_recap_documents_for_entry,
+    document_relation="recap_documents",
     order_by_asc=("recap_sequence_number", "entry_number"),
     order_by_desc=("-recap_sequence_number", "-entry_number"),
     document_is_attachment=_recap_document_is_attachment,
@@ -477,6 +480,7 @@ def _scotus_docket_url(docket: Docket) -> str | None:
 SCOTUS: DocketEntrySource = DocketEntrySource(
     entries_queryset=_scotus_entries,
     documents_for_entry=_scotus_documents_for_entry,
+    document_relation="scotusdocument",
     order_by_asc=("sequence_number",),
     order_by_desc=("-sequence_number",),
     document_is_attachment=_scotus_document_is_attachment,

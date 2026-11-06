@@ -57,6 +57,13 @@
             {{ form.entry_lte }}
           </div>
         </div>
+        <!-- Filing type -->
+        <div class="tight-input col-xs-6 col-sm-4 col-md-2">
+          <div class="cl-form-group{% if form.filing_type.errors %} has-error{% endif %}">
+            <label for="id_filing_type" class="control-label">Filing type</label>
+            {{ form.filing_type }}
+          </div>
+        </div>
         <!-- sort ordering -->
         <div class="tight-input col-xs-6 col-sm-3 col-md-2">
           <div id="sort-buttons"

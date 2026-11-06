@@ -110,6 +110,12 @@ class DocketEntryFilterForm(forms.Form):
             }
         ),
     )
+    filing_type = forms.ChoiceField(
+        required=False,
+        label="Filing type",
+        choices=(("", "All filing types"),),
+        widget=forms.Select(attrs={"class": "form-control"}),
+    )
     order_by = forms.ChoiceField(
         choices=DOCKET_ORDER_BY_CHOICES,
         required=False,
